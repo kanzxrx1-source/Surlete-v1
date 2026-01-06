@@ -1,0 +1,112 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- tunggu character & backpack
+if not player.Character then
+	player.CharacterAdded:Wait()
+end
+local backpack = player:WaitForChild("Backpack")
+
+-- ================= CREATE TOOL =================
+local tool = Instance.new("Tool")
+tool.Name = "deletev1"
+tool.RequiresHandle = false
+tool.Parent = backpack
+
+-- ================= VARIABLES =================
+local mouse
+local selectedTarget
+local highlight
+local gui
+
+-- ================= CLEAR =================
+local function clear()
+	if highlight then highlight:Destroy() end
+	if gui then gui:Destroy() end
+	highlight = nil
+	selectedTarget = nil
+end
+
+-- ================= LOCAL DELETE =================
+local function localDelete(target)
+	if target:IsA("Decal") or target:IsA("Texture") then return end
+
+	if target:IsA("Model") then
+		for _, v in ipairs(target:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.LocalTransparencyModifier = 1
+				v.CanCollide = false
+				v.CanTouch = false
+				v.CanQuery = false
+			end
+		end
+	elseif target:IsA("BasePart") then
+		target.LocalTransparencyModifier = 1
+		target.CanCollide = false
+		target.CanTouch = false
+		target.CanQuery = false
+	end
+end
+
+-- ================= HIGHLIGHT =================
+local function makeHighlight(target)
+	highlight = Instance.new("Highlight")
+	highlight.FillTransparency = 1
+	highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+	highlight.OutlineTransparency = 0
+	highlight.Adornee = target
+	highlight.Parent = target
+end
+
+-- ================= GUI =================
+local function makeGui()
+	gui = Instance.new("ScreenGui")
+	gui.ResetOnSpawn = false
+	gui.Parent = player:WaitForChild("PlayerGui")
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.fromScale(0.25, 0.15)
+	frame.Position = UDim2.fromScale(0.05, 0.4)
+	frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+	frame.Parent = gui
+
+	local cancel = Instance.new("TextButton")
+	cancel.Text = "CANCEL"
+	cancel.Size = UDim2.fromScale(0.45, 0.6)
+	cancel.Position = UDim2.fromScale(0.05, 0.2)
+	cancel.Parent = frame
+
+	local sure = Instance.new("TextButton")
+	sure.Text = "SURE"
+	sure.Size = UDim2.fromScale(0.45, 0.6)
+	sure.Position = UDim2.fromScale(0.5, 0.2)
+	sure.Parent = frame
+
+	cancel.MouseButton1Click:Connect(clear)
+
+	sure.MouseButton1Click:Connect(function()
+		if selectedTarget then
+			localDelete(selectedTarget)
+		end
+		clear()
+	end)
+end
+
+-- ================= TOOL EVENTS =================
+tool.Equipped:Connect(function(m)
+	mouse = m
+end)
+
+tool.Activated:Connect(function()
+	if not mouse then return end
+	local target = mouse.Target
+	if not target then return end
+	if target:IsA("Decal") or target:IsA("Texture") then return end
+
+	clear()
+	selectedTarget = target
+	makeHighlight(target)
+	makeGui()
+end)
+
+tool.Unequipped:Connect(clear)
