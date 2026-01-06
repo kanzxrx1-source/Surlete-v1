@@ -1,0 +1,153 @@
+-- LocalScript | StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
+
+local player = Players.LocalPlayer
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.Name = "NoClipGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 160)
+frame.Position = UDim2.new(0.5, -130, 0.5, -80)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+-- ================= TITLE =================
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 8)
+title.BackgroundTransparency = 1
+title.Text = "refexe4k wall penetrate"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
+-- ================= TOGGLE BUTTON =================
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, -20, 0, 50)
+toggleBtn.Position = UDim2.new(0, 10, 0, 55)
+toggleBtn.Text = "NOT ACTIVE"
+toggleBtn.TextSize = 18
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 10)
+btnCorner.Parent = toggleBtn
+
+-- ================= CLOSE BUTTON =================
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.Text = "X"
+closeBtn.TextSize = 18
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Parent = frame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+-- ================= NOCLIP SYSTEM =================
+local noclipActive = false
+local noclipConn
+
+local function isFloor(part)
+	if part.Name == "Baseplate" then return true end
+	if CollectionService:HasTag(part, "Floor") then return true end
+	return false
+end
+
+local function setModelNoCollide(model)
+	for _, v in ipairs(model:GetDescendants()) do
+		if (v:IsA("Part") or v:IsA("MeshPart")) and not isFloor(v) then
+			v.CanCollide = false
+		end
+	end
+end
+
+local function enableNoClip()
+	if noclipConn then return end
+
+	noclipConn = RunService.Stepped:Connect(function()
+		local char = player.Character
+		if not char then return end
+
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if not humanoid then return end
+
+		-- noclip dunia
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if (v:IsA("Part") or v:IsA("MeshPart")) and not isFloor(v) then
+				v.CanCollide = false
+			end
+		end
+
+		-- JIKA LAGI DUDUK / NAIK MOBIL
+		if humanoid.SeatPart then
+			local seat = humanoid.SeatPart
+			local vehicle = seat:FindFirstAncestorOfClass("Model")
+			if vehicle then
+				setModelNoCollide(vehicle)
+			end
+		end
+	end)
+end
+
+local function disableNoClip()
+	if noclipConn then
+		noclipConn:Disconnect()
+		noclipConn = nil
+	end
+
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("Part") or v:IsA("MeshPart") then
+			v.CanCollide = true
+		end
+	end
+end
+
+-- ================= BUTTON LOGIC =================
+toggleBtn.MouseButton1Click:Connect(function()
+	noclipActive = not noclipActive
+
+	if noclipActive then
+		toggleBtn.Text = "ACTIVE"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 80)
+		enableNoClip()
+	else
+		toggleBtn.Text = "NOT ACTIVE"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		disableNoClip()
+	end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	if noclipActive then
+		noclipActive = false
+		disableNoClip()
+		toggleBtn.Text = "NOT ACTIVE"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	end
+
+	frame.Visible = false
+end)
