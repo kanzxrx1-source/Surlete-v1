@@ -1,0 +1,154 @@
+-- LocalScript | StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+local humanoid
+local root
+
+-- ================= SETTINGS =================
+local JUMP_POWER = 50
+local AUTO_JUMP_DELAY = 0.15
+local HOLD_TIMEOUT = 0.4
+-- ============================================
+
+local enabled = false
+
+local holdingJump = false
+local lastJumpSignal = 0
+local lastAutoJump = 0
+
+-- ================= CHARACTER =================
+local function setup(char)
+	humanoid = char:WaitForChild("Humanoid")
+	root = char:WaitForChild("HumanoidRootPart")
+	holdingJump = false
+end
+
+player.CharacterAdded:Connect(setup)
+if player.Character then
+	setup(player.Character)
+end
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.Name = "InfinityJumpGui"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.fromScale(0.35, 0.22)
+mainFrame.Position = UDim2.fromScale(0.325, 0.39)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = gui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
+
+-- ===== TITLE =====
+local title = Instance.new("TextLabel")
+title.Size = UDim2.fromScale(0.7, 0.22)
+title.Position = UDim2.fromScale(0.05, 0.05)
+title.BackgroundTransparency = 1
+title.Text = "refexe4k inf float jump"
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
+
+-- CLOSE BUTTON
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.fromScale(0.12, 0.25)
+closeBtn.Position = UDim2.fromScale(0.86, 0.05)
+closeBtn.Text = "X"
+closeBtn.TextScaled = true
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+closeBtn.Parent = mainFrame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+-- TOGGLE BUTTON
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.fromScale(0.8, 0.45)
+toggleBtn.Position = UDim2.fromScale(0.1, 0.45)
+toggleBtn.Text = "NOT ACTIVE"
+toggleBtn.TextScaled = true
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+toggleBtn.Parent = mainFrame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 10)
+toggleCorner.Parent = toggleBtn
+
+-- ================= GUI LOGIC =================
+local function updateButton()
+	if enabled then
+		toggleBtn.Text = "ACTIVE"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(70, 200, 90)
+	else
+		toggleBtn.Text = "NOT ACTIVE"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+	end
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	updateButton()
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+end)
+
+updateButton()
+
+-- ================= INFINITY JUMP =================
+UserInputService.JumpRequest:Connect(function()
+	if not enabled then return end
+
+	holdingJump = true
+	lastJumpSignal = tick()
+
+	if humanoid and humanoid.FloorMaterial == Enum.Material.Air then
+		root.AssemblyLinearVelocity = Vector3.new(
+			root.AssemblyLinearVelocity.X,
+			JUMP_POWER,
+			root.AssemblyLinearVelocity.Z
+		)
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	if not enabled or not humanoid or not root then return end
+
+	if holdingJump and tick() - lastJumpSignal > HOLD_TIMEOUT then
+		holdingJump = false
+	end
+
+	if holdingJump and humanoid.FloorMaterial == Enum.Material.Air then
+		if tick() - lastAutoJump >= AUTO_JUMP_DELAY then
+			lastAutoJump = tick()
+
+			root.AssemblyLinearVelocity = Vector3.new(
+				root.AssemblyLinearVelocity.X,
+				JUMP_POWER,
+				root.AssemblyLinearVelocity.Z
+			)
+		end
+	end
+end)
