@@ -1,0 +1,144 @@
+-- Jump Height / Jump Power GUI (FINAL)
+-- LocalScript | StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local DEFAULT_JUMP_HEIGHT = 7.2
+local DEFAULT_JUMP_POWER = 50
+local MIN_JUMP = 7.2
+local MAX_JUMP = 1000
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpGui"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- ================= MAIN FRAME =================
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 260, 0, 160)
+main.Position = UDim2.new(0.5, -130, 0.5, -80)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ZIndex = 10
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+
+-- ================= TITLE =================
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -50, 0, 35)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "refexe4k jump"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 11
+title.Parent = main
+
+-- ================= CLOSE =================
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 5)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 18
+close.TextColor3 = Color3.fromRGB(255,80,80)
+close.BackgroundColor3 = Color3.fromRGB(45,45,45)
+close.ZIndex = 11
+close.Parent = main
+Instance.new("UICorner", close)
+
+-- ================= TEXTBOX =================
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1, -20, 0, 40)
+box.Position = UDim2.new(0, 10, 0, 55)
+box.PlaceholderText = "7.2 (normal) - 1000"
+box.Text = ""
+box.Font = Enum.Font.Gotham
+box.TextSize = 16
+box.TextColor3 = Color3.new(1,1,1)
+box.BackgroundColor3 = Color3.fromRGB(35,35,35)
+box.ClearTextOnFocus = false
+box.ZIndex = 11
+box.Parent = main
+Instance.new("UICorner", box).CornerRadius = UDim.new(0,8)
+
+-- ================= INFO =================
+local info = Instance.new("TextLabel")
+info.Size = UDim2.new(1, -20, 0, 30)
+info.Position = UDim2.new(0, 10, 0, 105)
+info.BackgroundTransparency = 1
+info.Text = "Hanya integer, kecuali 7.2 (default)"
+info.TextColor3 = Color3.fromRGB(180,180,180)
+info.Font = Enum.Font.Gotham
+info.TextSize = 13
+info.ZIndex = 11
+info.Parent = main
+
+-- ================= LOGIC =================
+local function getHumanoid()
+	local char = player.Character
+	if not char then return end
+	return char:FindFirstChildOfClass("Humanoid")
+end
+
+local function setNormalJump()
+	local hum = getHumanoid()
+	if not hum then return end
+
+	if hum.UseJumpPower then
+		hum.JumpPower = DEFAULT_JUMP_POWER
+	else
+		hum.JumpHeight = DEFAULT_JUMP_HEIGHT
+	end
+end
+
+local function applyJump(value)
+	local hum = getHumanoid()
+	if not hum then return end
+
+	if hum.UseJumpPower then
+		hum.JumpPower = value
+	else
+		hum.JumpHeight = value
+	end
+end
+
+-- VALIDATION INPUT
+box.FocusLost:Connect(function()
+	local text = box.Text
+	local num = tonumber(text)
+	if not num then
+		box.Text = ""
+		return
+	end
+
+	-- boleh desimal HANYA 7.2
+	if num ~= DEFAULT_JUMP_HEIGHT and num % 1 ~= 0 then
+		box.Text = ""
+		return
+	end
+
+	num = math.clamp(num, MIN_JUMP, MAX_JUMP)
+	box.Text = tostring(num)
+	applyJump(num)
+end)
+
+-- CLOSE → BALIK NORMAL
+close.MouseButton1Click:Connect(function()
+	setNormalJump()
+	gui:Destroy()
+end)
+
+-- RESPAWN → NORMAL
+player.CharacterAdded:Connect(function()
+	task.wait(0.2)
+	setNormalJump()
+end)
