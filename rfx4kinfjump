@@ -1,4 +1,4 @@
--- Jump Height / Jump Power GUI (FINAL)
+-- Jump Height / Jump Power GUI (BUG FIXED)
 -- LocalScript | StarterPlayerScripts
 
 local Players = game:GetService("Players")
@@ -7,7 +7,7 @@ local player = Players.LocalPlayer
 local DEFAULT_JUMP_HEIGHT = 7.2
 local DEFAULT_JUMP_POWER = 50
 local MIN_JUMP = 7.2
-local MAX_JUMP = 1000
+local MAX_JUMP = 5000
 
 -- ================= GUI =================
 local gui = Instance.new("ScreenGui")
@@ -59,7 +59,7 @@ Instance.new("UICorner", close)
 local box = Instance.new("TextBox")
 box.Size = UDim2.new(1, -20, 0, 40)
 box.Position = UDim2.new(0, 10, 0, 55)
-box.PlaceholderText = "7.2 (normal) - 1000"
+box.PlaceholderText = "0 / 7.2 (normal) - 5000"
 box.Text = ""
 box.Font = Enum.Font.Gotham
 box.TextSize = 16
@@ -75,7 +75,7 @@ local info = Instance.new("TextLabel")
 info.Size = UDim2.new(1, -20, 0, 30)
 info.Position = UDim2.new(0, 10, 0, 105)
 info.BackgroundTransparency = 1
-info.Text = "Hanya integer, kecuali 7.2 (default)"
+info.Text = "0 = normal | integer only (7.2 exception)"
 info.TextColor3 = Color3.fromRGB(180,180,180)
 info.Font = Enum.Font.Gotham
 info.TextSize = 13
@@ -104,6 +104,11 @@ local function applyJump(value)
 	local hum = getHumanoid()
 	if not hum then return end
 
+	-- SAFETY: jangan pernah kasih < 7.2
+	if value < MIN_JUMP then
+		value = DEFAULT_JUMP_HEIGHT
+	end
+
 	if hum.UseJumpPower then
 		hum.JumpPower = value
 	else
@@ -111,16 +116,22 @@ local function applyJump(value)
 	end
 end
 
--- VALIDATION INPUT
+-- ================= INPUT VALIDATION =================
 box.FocusLost:Connect(function()
-	local text = box.Text
-	local num = tonumber(text)
+	local num = tonumber(box.Text)
 	if not num then
 		box.Text = ""
 		return
 	end
 
-	-- boleh desimal HANYA 7.2
+	-- 0 = normal
+	if num == 0 then
+		box.Text = tostring(DEFAULT_JUMP_HEIGHT)
+		applyJump(DEFAULT_JUMP_HEIGHT)
+		return
+	end
+
+	-- decimal hanya boleh 7.2
 	if num ~= DEFAULT_JUMP_HEIGHT and num % 1 ~= 0 then
 		box.Text = ""
 		return
@@ -131,13 +142,13 @@ box.FocusLost:Connect(function()
 	applyJump(num)
 end)
 
--- CLOSE → BALIK NORMAL
+-- ================= CLOSE =================
 close.MouseButton1Click:Connect(function()
 	setNormalJump()
 	gui:Destroy()
 end)
 
--- RESPAWN → NORMAL
+-- ================= RESPAWN =================
 player.CharacterAdded:Connect(function()
 	task.wait(0.2)
 	setNormalJump()
